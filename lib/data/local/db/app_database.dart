@@ -11,11 +11,12 @@ class Spaces extends Table {
   TextColumn get id => text()(); // UUID
   TextColumn get parentId => text().nullable().references(Spaces, #id)();
   TextColumn get name => text()();
+  TextColumn get imagePath => text().nullable()();
   IntColumn get depth => integer().withDefault(const Constant(0))();
   IntColumn get itemCount => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -27,10 +28,11 @@ class Items extends Table {
   TextColumn get description => text().nullable()();
   TextColumn get category => text().nullable()();
   TextColumn get imagePath => text().nullable()();
-  TextColumn get status => text().withDefault(const Constant('STORED'))(); // ENUM as Text
+  TextColumn get status =>
+      text().withDefault(const Constant('STORED'))(); // ENUM as Text
   DateTimeColumn get lastUsedAt => dateTime().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
-  
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -47,7 +49,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 }
 
 LazyDatabase _openConnection() {

@@ -40,6 +40,17 @@ class $SpacesTable extends Spaces with TableInfo<$SpacesTable, Space> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _imagePathMeta = const VerificationMeta(
+    'imagePath',
+  );
+  @override
+  late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
+    'image_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _depthMeta = const VerificationMeta('depth');
   @override
   late final GeneratedColumn<int> depth = GeneratedColumn<int>(
@@ -89,6 +100,7 @@ class $SpacesTable extends Spaces with TableInfo<$SpacesTable, Space> {
     id,
     parentId,
     name,
+    imagePath,
     depth,
     itemCount,
     createdAt,
@@ -124,6 +136,12 @@ class $SpacesTable extends Spaces with TableInfo<$SpacesTable, Space> {
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('image_path')) {
+      context.handle(
+        _imagePathMeta,
+        imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta),
+      );
     }
     if (data.containsKey('depth')) {
       context.handle(
@@ -174,6 +192,10 @@ class $SpacesTable extends Spaces with TableInfo<$SpacesTable, Space> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      imagePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}image_path'],
+      ),
       depth: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}depth'],
@@ -203,6 +225,7 @@ class Space extends DataClass implements Insertable<Space> {
   final String id;
   final String? parentId;
   final String name;
+  final String? imagePath;
   final int depth;
   final int itemCount;
   final DateTime createdAt;
@@ -211,6 +234,7 @@ class Space extends DataClass implements Insertable<Space> {
     required this.id,
     this.parentId,
     required this.name,
+    this.imagePath,
     required this.depth,
     required this.itemCount,
     required this.createdAt,
@@ -224,6 +248,9 @@ class Space extends DataClass implements Insertable<Space> {
       map['parent_id'] = Variable<String>(parentId);
     }
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || imagePath != null) {
+      map['image_path'] = Variable<String>(imagePath);
+    }
     map['depth'] = Variable<int>(depth);
     map['item_count'] = Variable<int>(itemCount);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -238,6 +265,9 @@ class Space extends DataClass implements Insertable<Space> {
           ? const Value.absent()
           : Value(parentId),
       name: Value(name),
+      imagePath: imagePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagePath),
       depth: Value(depth),
       itemCount: Value(itemCount),
       createdAt: Value(createdAt),
@@ -254,6 +284,7 @@ class Space extends DataClass implements Insertable<Space> {
       id: serializer.fromJson<String>(json['id']),
       parentId: serializer.fromJson<String?>(json['parentId']),
       name: serializer.fromJson<String>(json['name']),
+      imagePath: serializer.fromJson<String?>(json['imagePath']),
       depth: serializer.fromJson<int>(json['depth']),
       itemCount: serializer.fromJson<int>(json['itemCount']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -267,6 +298,7 @@ class Space extends DataClass implements Insertable<Space> {
       'id': serializer.toJson<String>(id),
       'parentId': serializer.toJson<String?>(parentId),
       'name': serializer.toJson<String>(name),
+      'imagePath': serializer.toJson<String?>(imagePath),
       'depth': serializer.toJson<int>(depth),
       'itemCount': serializer.toJson<int>(itemCount),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -278,6 +310,7 @@ class Space extends DataClass implements Insertable<Space> {
     String? id,
     Value<String?> parentId = const Value.absent(),
     String? name,
+    Value<String?> imagePath = const Value.absent(),
     int? depth,
     int? itemCount,
     DateTime? createdAt,
@@ -286,6 +319,7 @@ class Space extends DataClass implements Insertable<Space> {
     id: id ?? this.id,
     parentId: parentId.present ? parentId.value : this.parentId,
     name: name ?? this.name,
+    imagePath: imagePath.present ? imagePath.value : this.imagePath,
     depth: depth ?? this.depth,
     itemCount: itemCount ?? this.itemCount,
     createdAt: createdAt ?? this.createdAt,
@@ -296,6 +330,7 @@ class Space extends DataClass implements Insertable<Space> {
       id: data.id.present ? data.id.value : this.id,
       parentId: data.parentId.present ? data.parentId.value : this.parentId,
       name: data.name.present ? data.name.value : this.name,
+      imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
       depth: data.depth.present ? data.depth.value : this.depth,
       itemCount: data.itemCount.present ? data.itemCount.value : this.itemCount,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -309,6 +344,7 @@ class Space extends DataClass implements Insertable<Space> {
           ..write('id: $id, ')
           ..write('parentId: $parentId, ')
           ..write('name: $name, ')
+          ..write('imagePath: $imagePath, ')
           ..write('depth: $depth, ')
           ..write('itemCount: $itemCount, ')
           ..write('createdAt: $createdAt, ')
@@ -318,8 +354,16 @@ class Space extends DataClass implements Insertable<Space> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, parentId, name, depth, itemCount, createdAt, updatedAt);
+  int get hashCode => Object.hash(
+    id,
+    parentId,
+    name,
+    imagePath,
+    depth,
+    itemCount,
+    createdAt,
+    updatedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -327,6 +371,7 @@ class Space extends DataClass implements Insertable<Space> {
           other.id == this.id &&
           other.parentId == this.parentId &&
           other.name == this.name &&
+          other.imagePath == this.imagePath &&
           other.depth == this.depth &&
           other.itemCount == this.itemCount &&
           other.createdAt == this.createdAt &&
@@ -337,6 +382,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
   final Value<String> id;
   final Value<String?> parentId;
   final Value<String> name;
+  final Value<String?> imagePath;
   final Value<int> depth;
   final Value<int> itemCount;
   final Value<DateTime> createdAt;
@@ -346,6 +392,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
     this.id = const Value.absent(),
     this.parentId = const Value.absent(),
     this.name = const Value.absent(),
+    this.imagePath = const Value.absent(),
     this.depth = const Value.absent(),
     this.itemCount = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -356,6 +403,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
     required String id,
     this.parentId = const Value.absent(),
     required String name,
+    this.imagePath = const Value.absent(),
     this.depth = const Value.absent(),
     this.itemCount = const Value.absent(),
     required DateTime createdAt,
@@ -369,6 +417,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
     Expression<String>? id,
     Expression<String>? parentId,
     Expression<String>? name,
+    Expression<String>? imagePath,
     Expression<int>? depth,
     Expression<int>? itemCount,
     Expression<DateTime>? createdAt,
@@ -379,6 +428,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
       if (id != null) 'id': id,
       if (parentId != null) 'parent_id': parentId,
       if (name != null) 'name': name,
+      if (imagePath != null) 'image_path': imagePath,
       if (depth != null) 'depth': depth,
       if (itemCount != null) 'item_count': itemCount,
       if (createdAt != null) 'created_at': createdAt,
@@ -391,6 +441,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
     Value<String>? id,
     Value<String?>? parentId,
     Value<String>? name,
+    Value<String?>? imagePath,
     Value<int>? depth,
     Value<int>? itemCount,
     Value<DateTime>? createdAt,
@@ -401,6 +452,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
       id: id ?? this.id,
       parentId: parentId ?? this.parentId,
       name: name ?? this.name,
+      imagePath: imagePath ?? this.imagePath,
       depth: depth ?? this.depth,
       itemCount: itemCount ?? this.itemCount,
       createdAt: createdAt ?? this.createdAt,
@@ -420,6 +472,9 @@ class SpacesCompanion extends UpdateCompanion<Space> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
+    }
+    if (imagePath.present) {
+      map['image_path'] = Variable<String>(imagePath.value);
     }
     if (depth.present) {
       map['depth'] = Variable<int>(depth.value);
@@ -445,6 +500,7 @@ class SpacesCompanion extends UpdateCompanion<Space> {
           ..write('id: $id, ')
           ..write('parentId: $parentId, ')
           ..write('name: $name, ')
+          ..write('imagePath: $imagePath, ')
           ..write('depth: $depth, ')
           ..write('itemCount: $itemCount, ')
           ..write('createdAt: $createdAt, ')
@@ -1351,6 +1407,7 @@ typedef $$SpacesTableCreateCompanionBuilder =
       required String id,
       Value<String?> parentId,
       required String name,
+      Value<String?> imagePath,
       Value<int> depth,
       Value<int> itemCount,
       required DateTime createdAt,
@@ -1362,6 +1419,7 @@ typedef $$SpacesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String?> parentId,
       Value<String> name,
+      Value<String?> imagePath,
       Value<int> depth,
       Value<int> itemCount,
       Value<DateTime> createdAt,
@@ -1427,6 +1485,11 @@ class $$SpacesTableFilterComposer
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1518,6 +1581,11 @@ class $$SpacesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get imagePath => $composableBuilder(
+    column: $table.imagePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get depth => $composableBuilder(
     column: $table.depth,
     builder: (column) => ColumnOrderings(column),
@@ -1576,6 +1644,9 @@ class $$SpacesTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get imagePath =>
+      $composableBuilder(column: $table.imagePath, builder: (column) => column);
 
   GeneratedColumn<int> get depth =>
       $composableBuilder(column: $table.depth, builder: (column) => column);
@@ -1669,6 +1740,7 @@ class $$SpacesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String?> parentId = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> imagePath = const Value.absent(),
                 Value<int> depth = const Value.absent(),
                 Value<int> itemCount = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -1678,6 +1750,7 @@ class $$SpacesTableTableManager
                 id: id,
                 parentId: parentId,
                 name: name,
+                imagePath: imagePath,
                 depth: depth,
                 itemCount: itemCount,
                 createdAt: createdAt,
@@ -1689,6 +1762,7 @@ class $$SpacesTableTableManager
                 required String id,
                 Value<String?> parentId = const Value.absent(),
                 required String name,
+                Value<String?> imagePath = const Value.absent(),
                 Value<int> depth = const Value.absent(),
                 Value<int> itemCount = const Value.absent(),
                 required DateTime createdAt,
@@ -1698,6 +1772,7 @@ class $$SpacesTableTableManager
                 id: id,
                 parentId: parentId,
                 name: name,
+                imagePath: imagePath,
                 depth: depth,
                 itemCount: itemCount,
                 createdAt: createdAt,

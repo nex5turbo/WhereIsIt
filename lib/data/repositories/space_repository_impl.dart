@@ -13,7 +13,11 @@ class SpaceRepositoryImpl implements SpaceRepository {
   SpaceRepositoryImpl(this._database);
 
   @override
-  Future<void> createSpace({required String name, String? parentId}) async {
+  Future<void> createSpace({
+    required String name,
+    String? parentId,
+    String? imagePath,
+  }) async {
     final uuid = const Uuid().v4();
 
     // Calculate depth
@@ -35,6 +39,7 @@ class SpaceRepositoryImpl implements SpaceRepository {
             name: name,
             parentId: Value(parentId),
             depth: Value(depth),
+            imagePath: Value(imagePath),
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           ),
@@ -117,6 +122,7 @@ class SpaceRepositoryImpl implements SpaceRepository {
       id: row.id,
       name: row.name,
       parentId: row.parentId,
+      imagePath: row.imagePath,
       depth: row.depth,
       itemCount: row.itemCount,
       createdAt: row.createdAt,

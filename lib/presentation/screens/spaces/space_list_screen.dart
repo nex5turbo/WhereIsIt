@@ -4,11 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../../../domain/entities/item.dart';
 import '../../../domain/entities/space.dart';
 import '../../providers/item_providers.dart';
-import '../items/create_item_dialog.dart';
+import '../items/create_item_sheet.dart';
 import '../../../data/repositories/item_repository_impl.dart'; // for provider
 import '../../providers/space_providers.dart';
 import '../../providers/view_mode_provider.dart';
-import 'create_space_dialog.dart';
+import 'create_space_sheet.dart';
 import 'space_graph_view.dart';
 
 class SpaceListScreen extends ConsumerWidget {
@@ -56,10 +56,10 @@ class SpaceListScreen extends ConsumerWidget {
                         CupertinoActionSheetAction(
                           onPressed: () {
                             Navigator.pop(context);
-                            showCupertinoDialog(
+                            showCupertinoModalPopup(
                               context: context,
                               builder: (_) =>
-                                  CreateSpaceDialog(parentId: parentId),
+                                  CreateSpaceSheet(parentId: parentId),
                             );
                           },
                           child: const Text('New Folder'),
@@ -67,10 +67,10 @@ class SpaceListScreen extends ConsumerWidget {
                         CupertinoActionSheetAction(
                           onPressed: () {
                             Navigator.pop(context);
-                            showCupertinoDialog(
+                            showCupertinoModalPopup(
                               context: context,
                               builder: (_) =>
-                                  CreateItemDialog(spaceId: parentId!),
+                                  CreateItemSheet(spaceId: parentId!),
                             );
                           },
                           child: const Text('New Item'),
@@ -84,9 +84,9 @@ class SpaceListScreen extends ConsumerWidget {
                   );
                 } else {
                   // Only Space allowed at root
-                  showCupertinoDialog(
+                  showCupertinoModalPopup(
                     context: context,
-                    builder: (_) => CreateSpaceDialog(parentId: parentId),
+                    builder: (_) => CreateSpaceSheet(parentId: parentId),
                   );
                 }
               },
@@ -145,7 +145,7 @@ class SpaceListScreen extends ConsumerWidget {
             if (viewMode == ViewMode.grid) {
               return SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                  crossAxisCount: 3,
                   childAspectRatio: 1.5,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
@@ -236,7 +236,7 @@ class SpaceListScreen extends ConsumerWidget {
             if (viewMode == ViewMode.grid) {
               return SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                  crossAxisCount: 3,
                   childAspectRatio: 1.2,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
