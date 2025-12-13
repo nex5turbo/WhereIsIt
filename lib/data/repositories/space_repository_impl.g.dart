@@ -48,7 +48,7 @@ final class AppDatabaseProvider
   }
 }
 
-String _$appDatabaseHash() => r'82be8e5ef038b1bb8599a73f500ae949d1a69f75';
+String _$appDatabaseHash() => r'9fc34d92558eeefa631eca6bce2e345e6df992b1';
 
 @ProviderFor(spaceRepository)
 const spaceRepositoryProvider = SpaceRepositoryProvider._();
@@ -90,4 +90,4 @@ final class SpaceRepositoryProvider
   }
 }
 
-String _$spaceRepositoryHash() => r'b5cb6c2d6d3c3d95617f9e11436b487347fc1858';
+String _$spaceRepositoryHash() => r'0797f013a78243408adfe6a50b23e77f36f901d2';

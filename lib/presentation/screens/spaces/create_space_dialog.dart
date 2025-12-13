@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/repositories/space_repository_impl.dart';
-import '../../presentation/providers/space_providers.dart';
+import '../../../data/repositories/space_repository_impl.dart';
+import '../../providers/space_providers.dart';
 
 class CreateSpaceDialog extends ConsumerStatefulWidget {
   final String? parentId;
@@ -28,17 +28,17 @@ class _CreateSpaceDialogState extends ConsumerState<CreateSpaceDialog> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       try {
-        await ref.read(spaceRepositoryProvider).createSpace(
-          name: _nameController.text,
-          parentId: widget.parentId,
-        );
+        await ref
+            .read(spaceRepositoryProvider)
+            .createSpace(name: _nameController.text, parentId: widget.parentId);
         if (mounted) {
-           // Invalidate the provider to refresh the list
-           ref.invalidate(spacesProvider(parentId: widget.parentId));
-           context.pop();
+          // Invalidate the provider to refresh the list
+          ref.invalidate(spacesProvider(parentId: widget.parentId));
+          context.pop();
         }
       } catch (e) {
-        if (mounted) { // Handle error }
+        if (mounted) {
+          // Handle error }
         }
       } finally {
         if (mounted) setState(() => _isLoading = false);
@@ -55,7 +55,8 @@ class _CreateSpaceDialogState extends ConsumerState<CreateSpaceDialog> {
         child: TextFormField(
           controller: _nameController,
           decoration: const InputDecoration(labelText: 'Space Name'),
-          validator: (value) => value == null || value.isEmpty ? 'Please enter a name' : null,
+          validator: (value) =>
+              value == null || value.isEmpty ? 'Please enter a name' : null,
           autofocus: true,
         ),
       ),
@@ -63,7 +64,9 @@ class _CreateSpaceDialogState extends ConsumerState<CreateSpaceDialog> {
         TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
-          child: _isLoading ? const CircularProgressIndicator.adaptive() : const Text('Create'),
+          child: _isLoading
+              ? const CircularProgressIndicator.adaptive()
+              : const Text('Create'),
         ),
       ],
     );

@@ -63,7 +63,7 @@ final class ItemsInSpaceProvider
   }
 }
 
-String _$itemsInSpaceHash() => r'8a5d4bc37dfc5b422c4aaa14fabd597a8fa26a91';
+String _$itemsInSpaceHash() => r'd577a5b29f1bf9c1058aeefb26b9116655f975de';
 
 final class ItemsInSpaceFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<Item>>, String> {

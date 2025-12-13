@@ -15,33 +15,39 @@ class SpaceRepositoryImpl implements SpaceRepository {
   @override
   Future<void> createSpace({required String name, String? parentId}) async {
     final uuid = const Uuid().v4();
-    
+
     // Calculate depth
     int depth = 0;
     if (parentId != null) {
-      final parent = await (_database.select(_database.spaces)..where((tbl) => tbl.id.equals(parentId))).getSingleOrNull();
+      final parent = await (_database.select(
+        _database.spaces,
+      )..where((tbl) => tbl.id.equals(parentId))).getSingleOrNull();
       if (parent != null) {
         depth = parent.depth + 1;
       }
     }
 
-    await _database.into(_database.spaces).insert(
-      db.SpacesCompanion.insert(
-        id: uuid,
-        name: name,
-        parentId: Value(parentId),
-        depth: Value(depth),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    );
+    await _database
+        .into(_database.spaces)
+        .insert(
+          db.SpacesCompanion.insert(
+            id: uuid,
+            name: name,
+            parentId: Value(parentId),
+            depth: Value(depth),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
   }
 
   @override
   Future<void> deleteSpace(String id) async {
     // Cascade delete is handled by DB reference usually, or manually here.
     // For now, simple delete. (Recursive delete needed for children in real app)
-    await (_database.delete(_database.spaces)..where((tbl) => tbl.id.equals(id))).go();
+    await (_database.delete(
+      _database.spaces,
+    )..where((tbl) => tbl.id.equals(id))).go();
   }
 
   @override
@@ -52,14 +58,16 @@ class SpaceRepositoryImpl implements SpaceRepository {
     } else {
       query.where((tbl) => tbl.parentId.isNull());
     }
-    
+
     final dbSpaces = await query.get();
     return dbSpaces.map((e) => _mapToEntity(e)).toList();
   }
 
   @override
   Future<Space?> getSpace(String id) async {
-    final dbSpace = await (_database.select(_database.spaces)..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+    final dbSpace = await (_database.select(
+      _database.spaces,
+    )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
     return dbSpace != null ? _mapToEntity(dbSpace) : null;
   }
 
@@ -80,11 +88,13 @@ class SpaceRepositoryImpl implements SpaceRepository {
 
   @override
   Future<void> updateSpace(Space space) async {
-    await (_database.update(_database.spaces)..where((tbl) => tbl.id.equals(space.id))).write(
+    await (_database.update(
+      _database.spaces,
+    )..where((tbl) => tbl.id.equals(space.id))).write(
       db.SpacesCompanion(
         name: Value(space.name),
         updatedAt: Value(DateTime.now()),
-      )
+      ),
     );
   }
 
@@ -103,12 +113,12 @@ class SpaceRepositoryImpl implements SpaceRepository {
 
 // Providers
 @riverpod
-db.AppDatabase appDatabase(AppDatabaseRef ref) {
+db.AppDatabase appDatabase(Ref ref) {
   return db.AppDatabase();
 }
 
 @riverpod
-SpaceRepository spaceRepository(SpaceRepositoryRef ref) {
+SpaceRepository spaceRepository(Ref ref) {
   final database = ref.watch(appDatabaseProvider);
   return SpaceRepositoryImpl(database);
 }

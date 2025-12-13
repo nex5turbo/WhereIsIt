@@ -5,7 +5,7 @@ import '../../data/repositories/item_repository_impl.dart';
 part 'item_providers.g.dart';
 
 @riverpod
-Future<List<Item>> itemsInSpace(ItemsInSpaceRef ref, String spaceId) async {
+Future<List<Item>> itemsInSpace(Ref ref, String spaceId) async {
   final repository = ref.watch(itemRepositoryProvider);
   return repository.getItemsInSpace(spaceId);
 }

@@ -6,7 +6,7 @@ import '../../presentation/screens/spaces/space_list_screen.dart';
 part 'app_router.g.dart';
 
 @riverpod
-GoRouter goRouter(GoRouterRef ref) {
+GoRouter goRouter(Ref ref) {
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: true,

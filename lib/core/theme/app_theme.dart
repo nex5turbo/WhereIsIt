@@ -38,12 +38,12 @@ abstract class AppTheme {
         ),
         iconTheme: const IconThemeData(color: _onSurfaceColor),
       ),
-      cardTheme: CardTheme(
+      /* cardTheme: CardTheme(
         color: _surfaceColor,
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.05),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
+      ), */
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: _primaryColor,

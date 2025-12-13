@@ -3,8 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
 
-void main() {
-  runApp(const ProviderScope(child: WhereIsItApp()));
+import 'core/services/notification_service.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final container = ProviderContainer();
+  await container.read(notificationServiceProvider).initialize();
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const WhereIsItApp(),
+    ),
+  );
 }
 
 class WhereIsItApp extends ConsumerWidget {

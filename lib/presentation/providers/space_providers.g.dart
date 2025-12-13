@@ -64,7 +64,7 @@ final class SpacesProvider
   }
 }
 
-String _$spacesHash() => r'3f85a24f69ae6bda292afe183de40bbc0d25afe9';
+String _$spacesHash() => r'a780a2a03ae5779a8d06895cd48cb10be22928af';
 
 final class SpacesFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<Space>>, String?> {
@@ -139,7 +139,7 @@ final class BreadcrumbsProvider
   }
 }
 
-String _$breadcrumbsHash() => r'fadab31aa9ad81d9d3e3d23a23dfaf388f23d7ed';
+String _$breadcrumbsHash() => r'2ea032d45f2b25c44aee413324ab7afb3f905b51';
 
 final class BreadcrumbsFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<List<Space>>, String> {

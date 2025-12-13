@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
-import '../../domain/entities/item.dart';
-import '../../data/repositories/item_repository_impl.dart';
-import '../../presentation/providers/item_providers.dart';
+import '../../../domain/entities/item.dart';
+import '../../../data/repositories/item_repository_impl.dart';
+import '../../providers/item_providers.dart';
 
 class CreateItemDialog extends ConsumerStatefulWidget {
   final String spaceId;
@@ -36,15 +36,17 @@ class _CreateItemDialogState extends ConsumerState<CreateItemDialog> {
           id: const Uuid().v4(),
           spaceId: widget.spaceId,
           name: _nameController.text,
-          category: _categoryController.text.isNotEmpty ? _categoryController.text : null,
+          category: _categoryController.text.isNotEmpty
+              ? _categoryController.text
+              : null,
           status: ItemStatus.stored,
         );
 
         await ref.read(itemRepositoryProvider).createItem(item);
-        
+
         if (mounted) {
-           ref.invalidate(itemsInSpaceProvider(widget.spaceId));
-           context.pop();
+          ref.invalidate(itemsInSpaceProvider(widget.spaceId));
+          context.pop();
         }
       } catch (e) {
         // Handle error
@@ -66,13 +68,16 @@ class _CreateItemDialogState extends ConsumerState<CreateItemDialog> {
             TextFormField(
               controller: _nameController,
               decoration: const InputDecoration(labelText: 'Item Name'),
-              validator: (value) => value == null || value.isEmpty ? 'Please enter a name' : null,
+              validator: (value) =>
+                  value == null || value.isEmpty ? 'Please enter a name' : null,
               autofocus: true,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _categoryController,
-              decoration: const InputDecoration(labelText: 'Category (Optional)'),
+              decoration: const InputDecoration(
+                labelText: 'Category (Optional)',
+              ),
             ),
           ],
         ),
@@ -81,7 +86,9 @@ class _CreateItemDialogState extends ConsumerState<CreateItemDialog> {
         TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
-          child: _isLoading ? const CircularProgressIndicator.adaptive() : const Text('Create'),
+          child: _isLoading
+              ? const CircularProgressIndicator.adaptive()
+              : const Text('Create'),
         ),
       ],
     );
