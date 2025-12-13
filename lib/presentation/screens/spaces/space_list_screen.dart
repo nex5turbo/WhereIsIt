@@ -32,9 +32,67 @@ class SpaceListScreen extends ConsumerWidget {
             : null,
         middle: breadcrumbsAsync.when(
           data: (crumbs) {
-            if (crumbs.isEmpty) return const Text('My Home');
-            // Simplified breadcrumb for title area or just show current space name
-            return Text(crumbs.isNotEmpty ? crumbs.last.name : 'My Home');
+            // Combine "My Home" and the spaces path
+            final breadcrumbItems = [
+              // Root item placeholder
+              _BreadcrumbItem(name: 'My Home', id: null),
+              ...crumbs.map((s) => _BreadcrumbItem(name: s.name, id: s.id)),
+            ];
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: breadcrumbItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  final isLast = index == breadcrumbItems.length - 1;
+
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Separator (don't show before the first item)
+                      if (index > 0)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.0),
+                          child: Text(
+                            '>',
+                            style: TextStyle(
+                              color: CupertinoColors.systemGrey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+
+                      // Breadcrumb Item
+                      GestureDetector(
+                        onTap: isLast
+                            ? null
+                            : () {
+                                if (item.id == null) {
+                                  context.go('/');
+                                } else {
+                                  context.go('/space/${item.id}');
+                                }
+                              },
+                        child: Text(
+                          item.name,
+                          style: TextStyle(
+                            color: isLast
+                                ? CupertinoColors.black
+                                : CupertinoColors.systemGrey,
+                            fontWeight: isLast
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            fontSize: 17,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            );
           },
           loading: () => const Text('Loading...'),
           error: (_, __) => const Text('Error'),
@@ -351,4 +409,11 @@ class SpaceListScreen extends ConsumerWidget {
       ref.invalidate(itemsInSpaceProvider(parentId!));
     }
   }
+}
+
+class _BreadcrumbItem {
+  final String name;
+  final String? id;
+
+  _BreadcrumbItem({required this.name, required this.id});
 }
