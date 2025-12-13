@@ -16,27 +16,60 @@ class ItemRepositoryImpl implements ItemRepository {
 
   @override
   Future<void> createItem(Item item) async {
-    await _database
-        .into(_database.items)
-        .insert(
-          db.ItemsCompanion.insert(
-            id: item.id,
-            spaceId: item.spaceId,
-            name: item.name,
-            description: Value(item.description),
-            category: Value(item.category),
-            imagePath: Value(item.imagePath),
-            status: Value(item.status.name), // Store as String
-            lastUsedAt: Value(item.lastUsedAt),
-          ),
-        );
+    await _database.transaction(() async {
+      await _database
+          .into(_database.items)
+          .insert(
+            db.ItemsCompanion.insert(
+              id: item.id,
+              spaceId: item.spaceId,
+              name: item.name,
+              description: Value(item.description),
+              category: Value(item.category),
+              imagePath: Value(item.imagePath),
+              status: Value(item.status.name),
+              lastUsedAt: Value(item.lastUsedAt),
+            ),
+          );
+
+      // Update Space itemCount
+      final space = await (_database.select(
+        _database.spaces,
+      )..where((tbl) => tbl.id.equals(item.spaceId))).getSingle();
+
+      await (_database.update(_database.spaces)
+            ..where((tbl) => tbl.id.equals(item.spaceId)))
+          .write(db.SpacesCompanion(itemCount: Value(space.itemCount + 1)));
+    });
   }
 
   @override
   Future<void> deleteItem(String id) async {
-    await (_database.delete(
-      _database.items,
-    )..where((tbl) => tbl.id.equals(id))).go();
+    await _database.transaction(() async {
+      // Get item to find spaceId before deleting
+      final item = await (_database.select(
+        _database.items,
+      )..where((tbl) => tbl.id.equals(id))).getSingleOrNull();
+
+      if (item != null) {
+        await (_database.delete(
+          _database.items,
+        )..where((tbl) => tbl.id.equals(id))).go();
+
+        // Update Space itemCount
+        final space = await (_database.select(
+          _database.spaces,
+        )..where((tbl) => tbl.id.equals(item.spaceId))).getSingle();
+
+        await (_database.update(
+          _database.spaces,
+        )..where((tbl) => tbl.id.equals(item.spaceId))).write(
+          db.SpacesCompanion(
+            itemCount: Value(space.itemCount > 0 ? space.itemCount - 1 : 0),
+          ),
+        );
+      }
+    });
   }
 
   @override

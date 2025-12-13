@@ -17,9 +17,9 @@ final class SpacesProvider
         $FunctionalProvider<
           AsyncValue<List<Space>>,
           List<Space>,
-          FutureOr<List<Space>>
+          Stream<List<Space>>
         >
-    with $FutureModifier<List<Space>>, $FutureProvider<List<Space>> {
+    with $FutureModifier<List<Space>>, $StreamProvider<List<Space>> {
   const SpacesProvider._({
     required SpacesFamily super.from,
     required String? super.argument,
@@ -43,12 +43,12 @@ final class SpacesProvider
 
   @$internal
   @override
-  $FutureProviderElement<List<Space>> $createElement(
+  $StreamProviderElement<List<Space>> $createElement(
     $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
+  ) => $StreamProviderElement(pointer);
 
   @override
-  FutureOr<List<Space>> create(Ref ref) {
+  Stream<List<Space>> create(Ref ref) {
     final argument = this.argument as String?;
     return spaces(ref, parentId: argument);
   }
@@ -64,10 +64,10 @@ final class SpacesProvider
   }
 }
 
-String _$spacesHash() => r'a780a2a03ae5779a8d06895cd48cb10be22928af';
+String _$spacesHash() => r'20857a27cbae8324fe3e273b64213b02b975b894';
 
 final class SpacesFamily extends $Family
-    with $FunctionalFamilyOverride<FutureOr<List<Space>>, String?> {
+    with $FunctionalFamilyOverride<Stream<List<Space>>, String?> {
   const SpacesFamily._()
     : super(
         retry: null,

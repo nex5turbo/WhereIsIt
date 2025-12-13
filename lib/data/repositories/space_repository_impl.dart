@@ -64,6 +64,20 @@ class SpaceRepositoryImpl implements SpaceRepository {
   }
 
   @override
+  Stream<List<Space>> watchSpaces({String? parentId}) {
+    final query = _database.select(_database.spaces);
+    if (parentId != null) {
+      query.where((tbl) => tbl.parentId.equals(parentId));
+    } else {
+      query.where((tbl) => tbl.parentId.isNull());
+    }
+
+    return query.watch().map(
+      (rows) => rows.map((e) => _mapToEntity(e)).toList(),
+    );
+  }
+
+  @override
   Future<Space?> getSpace(String id) async {
     final dbSpace = await (_database.select(
       _database.spaces,

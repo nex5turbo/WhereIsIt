@@ -5,9 +5,9 @@ import '../../data/repositories/space_repository_impl.dart';
 part 'space_providers.g.dart';
 
 @riverpod
-Future<List<Space>> spaces(Ref ref, {String? parentId}) async {
+Stream<List<Space>> spaces(Ref ref, {String? parentId}) {
   final repository = ref.watch(spaceRepositoryProvider);
-  return repository.getSpaces(parentId: parentId);
+  return repository.watchSpaces(parentId: parentId);
 }
 
 @riverpod

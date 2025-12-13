@@ -2,6 +2,7 @@ import '../entities/space.dart';
 
 abstract class SpaceRepository {
   Future<List<Space>> getSpaces({String? parentId});
+  Stream<List<Space>> watchSpaces({String? parentId});
   Future<Space?> getSpace(String id);
   Future<void> createSpace({required String name, String? parentId});
   Future<void> updateSpace(Space space);
