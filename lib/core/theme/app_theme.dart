@@ -1,76 +1,52 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show TextTheme;
 import 'package:google_fonts/google_fonts.dart';
 
 abstract class AppTheme {
   static const _primaryColor = Color(0xFF6C63FF); // Example Premium Purple/Blue
+  // ignore: unused_field
   static const _secondaryColor = Color(0xFFFF6584); // Accent Pink/Red
   static const _backgroundColor = Color(0xFFF8F9FE); // Soft White/Gray
-  static const _surfaceColor = Colors.white;
+  static const _surfaceColor = Color(0xFFFFFFFF);
   static const _onSurfaceColor = Color(0xFF2D3142); // Dark Charcoal
 
-  static final TextTheme _textTheme = GoogleFonts.outfitTextTheme(
-    ThemeData.light().textTheme,
-  ).apply(
-    bodyColor: _onSurfaceColor, 
-    displayColor: _onSurfaceColor,
-  );
+  static final TextTheme _baseTextTheme = GoogleFonts.outfitTextTheme();
 
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: _primaryColor,
-        primary: _primaryColor,
-        secondary: _secondaryColor,
-        surface: _surfaceColor,
-        background: _backgroundColor,
-        onSurface: _onSurfaceColor,
+  static CupertinoTextThemeData get _textTheme {
+    return CupertinoTextThemeData(
+      primaryColor: _primaryColor,
+      textStyle: _baseTextTheme.bodyMedium?.copyWith(color: _onSurfaceColor),
+      actionTextStyle: _baseTextTheme.bodyMedium?.copyWith(
+        color: _primaryColor,
       ),
+      tabLabelTextStyle: _baseTextTheme.labelSmall,
+      navTitleTextStyle: _baseTextTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: _onSurfaceColor,
+        fontSize: 20,
+      ),
+      navLargeTitleTextStyle: _baseTextTheme.headlineMedium?.copyWith(
+        fontWeight: FontWeight.bold,
+        color: _onSurfaceColor,
+      ),
+      pickerTextStyle: _baseTextTheme.bodyLarge?.copyWith(
+        color: _onSurfaceColor,
+      ),
+      dateTimePickerTextStyle: _baseTextTheme.bodyLarge?.copyWith(
+        color: _onSurfaceColor,
+      ),
+    );
+  }
+
+  static CupertinoThemeData get lightTheme {
+    return CupertinoThemeData(
+      brightness: Brightness.light,
+      primaryColor: _primaryColor,
+      primaryContrastingColor: _surfaceColor,
+      barBackgroundColor: _backgroundColor.withOpacity(0.9), // Glassy header
       scaffoldBackgroundColor: _backgroundColor,
       textTheme: _textTheme,
-      appBarTheme: AppBarTheme(
-        backgroundColor: _backgroundColor,
-        elevation: 0,
-        titleTextStyle: _textTheme.headlineSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: _onSurfaceColor,
-        ),
-        iconTheme: const IconThemeData(color: _onSurfaceColor),
-      ),
-      /* cardTheme: CardTheme(
-        color: _surfaceColor,
-        elevation: 2,
-        shadowColor: Colors.black.withOpacity(0.05),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ), */
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _primaryColor,
-          foregroundColor: Colors.white,
-          elevation: 4,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: _textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-      ),
-       inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: _surfaceColor,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _primaryColor, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      ),
+      applyThemeToAll: true,
     );
   }
 }

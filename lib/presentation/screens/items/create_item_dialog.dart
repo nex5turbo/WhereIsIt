@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
@@ -16,7 +16,6 @@ class CreateItemDialog extends ConsumerStatefulWidget {
 }
 
 class _CreateItemDialogState extends ConsumerState<CreateItemDialog> {
-  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
   bool _isLoading = false;
@@ -29,65 +28,63 @@ class _CreateItemDialogState extends ConsumerState<CreateItemDialog> {
   }
 
   Future<void> _submit() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-      try {
-        final item = Item(
-          id: const Uuid().v4(),
-          spaceId: widget.spaceId,
-          name: _nameController.text,
-          category: _categoryController.text.isNotEmpty
-              ? _categoryController.text
-              : null,
-          status: ItemStatus.stored,
-        );
+    if (_nameController.text.trim().isEmpty) {
+      return;
+    }
+    setState(() => _isLoading = true);
+    try {
+      final item = Item(
+        id: const Uuid().v4(),
+        spaceId: widget.spaceId,
+        name: _nameController.text,
+        category: _categoryController.text.isNotEmpty
+            ? _categoryController.text
+            : null,
+        status: ItemStatus.stored,
+      );
 
-        await ref.read(itemRepositoryProvider).createItem(item);
+      await ref.read(itemRepositoryProvider).createItem(item);
 
-        if (mounted) {
-          ref.invalidate(itemsInSpaceProvider(widget.spaceId));
-          context.pop();
-        }
-      } catch (e) {
-        // Handle error
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        ref.invalidate(itemsInSpaceProvider(widget.spaceId));
+        context.pop();
       }
+    } catch (e) {
+      // Handle error
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
+    return CupertinoAlertDialog(
       title: const Text('Add New Item'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Item Name'),
-              validator: (value) =>
-                  value == null || value.isEmpty ? 'Please enter a name' : null,
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category (Optional)',
-              ),
-            ),
-          ],
-        ),
+      content: Column(
+        children: [
+          const SizedBox(height: 16),
+          CupertinoTextField(
+            controller: _nameController,
+            placeholder: 'Item Name',
+            autofocus: true,
+          ),
+          const SizedBox(height: 12),
+          CupertinoTextField(
+            controller: _categoryController,
+            placeholder: 'Category (Optional)',
+          ),
+        ],
       ),
       actions: [
-        TextButton(onPressed: () => context.pop(), child: const Text('Cancel')),
-        ElevatedButton(
+        CupertinoDialogAction(
+          onPressed: () => context.pop(),
+          child: const Text('Cancel'),
+        ),
+        CupertinoDialogAction(
           onPressed: _isLoading ? null : _submit,
+          isDefaultAction: true,
           child: _isLoading
-              ? const CircularProgressIndicator.adaptive()
+              ? const CupertinoActivityIndicator()
               : const Text('Create'),
         ),
       ],

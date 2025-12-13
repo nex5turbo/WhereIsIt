@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:graphview/GraphView.dart';
 import '../../../domain/entities/space.dart';
@@ -56,7 +56,7 @@ class _SpaceGraphViewState extends ConsumerState<SpaceGraphView> {
                   TreeEdgeRenderer(_builder),
                 ),
                 paint: Paint()
-                  ..color = Colors.green
+                  ..color = CupertinoColors.systemGrey
                   ..strokeWidth = 1
                   ..style = PaintingStyle.stroke,
                 builder: (Node node) {
@@ -66,11 +66,11 @@ class _SpaceGraphViewState extends ConsumerState<SpaceGraphView> {
               ),
             );
           },
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (e, s) => Text('Error: $e'),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const Center(child: CupertinoActivityIndicator()),
       error: (e, s) => Text('Error: $e'),
     );
   }
@@ -106,20 +106,26 @@ class _SpaceGraphViewState extends ConsumerState<SpaceGraphView> {
 
   Widget _buildNodeWidget(String id, List<Space> spaces, List<Item> items) {
     if (id == widget.rootId) {
-      return _rectangleWidget('Current Space', Colors.blue.shade100);
+      return _rectangleWidget(
+        'Current Space',
+        CupertinoColors.systemBlue.withOpacity(0.2),
+      );
     }
 
     final space = spaces.where((e) => e.id == id).firstOrNull;
     if (space != null) {
-      return _rectangleWidget(space.name, Colors.amber.shade100);
+      return _rectangleWidget(
+        space.name,
+        CupertinoColors.systemYellow.withOpacity(0.2),
+      );
     }
 
     final item = items.where((e) => e.id == id).firstOrNull;
     if (item != null) {
-      return _rectangleWidget(item.name, Colors.white, isItem: true);
+      return _rectangleWidget(item.name, CupertinoColors.white, isItem: true);
     }
 
-    return _rectangleWidget('Unknown', Colors.grey);
+    return _rectangleWidget('Unknown', CupertinoColors.systemGrey);
   }
 
   Widget _rectangleWidget(String a, Color bgColor, {bool isItem = false}) {
@@ -127,21 +133,34 @@ class _SpaceGraphViewState extends ConsumerState<SpaceGraphView> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.grey.shade200, spreadRadius: 1)],
+        boxShadow: [
+          BoxShadow(
+            color: CupertinoColors.systemGrey.withOpacity(0.2),
+            spreadRadius: 1,
+          ),
+        ],
         color: bgColor,
-        border: isItem ? Border.all(color: Colors.grey.shade300) : null,
+        border: isItem
+            ? Border.all(color: CupertinoColors.systemGrey.withOpacity(0.4))
+            : null,
       ),
       child: Column(
         children: [
           Icon(
-            isItem ? Icons.inventory_2_outlined : Icons.folder_outlined,
+            isItem ? CupertinoIcons.cube_box : CupertinoIcons.folder,
             size: 20,
-            color: isItem ? Colors.grey : Colors.amber.shade800,
+            color: isItem
+                ? CupertinoColors.systemGrey
+                : CupertinoColors.systemYellow,
           ),
           const SizedBox(height: 4),
           Text(
             a,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: CupertinoColors.black,
+            ),
           ),
         ],
       ),

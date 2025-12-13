@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../domain/entities/item.dart';
@@ -24,114 +24,106 @@ class SpaceListScreen extends ConsumerWidget {
         ? ref.watch(breadcrumbsProvider(parentId!))
         : const AsyncValue.data(<Space>[]);
 
-    return Scaffold(
-      appBar: AppBar(
+    return CupertinoPageScaffold(
+      navigationBar: CupertinoNavigationBar(
+        // Leading handled automatically by Navigator/GoRouter usually, or explicit back button
         leading: parentId != null
-            ? IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: () => context.pop(),
-              )
+            ? CupertinoNavigationBarBackButton(onPressed: () => context.pop())
             : null,
-        title: breadcrumbsAsync.when(
+        middle: breadcrumbsAsync.when(
           data: (crumbs) {
             if (crumbs.isEmpty) return const Text('My Home');
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.go('/'),
-                    child: Text(
-                      'Home',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-                  ...crumbs.map(
-                    (e) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            if (e.id != parentId) {
-                              context.push('/space/${e.id}');
-                            }
-                          },
-                          child: Text(
-                            e.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right,
-                          size: 16,
-                          color: Colors.grey,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
+            // Simplified breadcrumb for title area or just show current space name
+            return Text(crumbs.isNotEmpty ? crumbs.last.name : 'My Home');
           },
           loading: () => const Text('Loading...'),
           error: (_, __) => const Text('Error'),
         ),
-        actions: [
-          // View Mode Toggle
-          SegmentedButton<ViewMode>(
-            showSelectedIcon: false,
-            segments: const [
-              ButtonSegment(value: ViewMode.list, icon: Icon(Icons.list)),
-              ButtonSegment(value: ViewMode.grid, icon: Icon(Icons.grid_view)),
-              ButtonSegment(
-                value: ViewMode.graph,
-                icon: Icon(Icons.account_tree),
-              ),
-            ],
-            selected: {viewMode},
-            onSelectionChanged: (Set<ViewMode> newSelection) {
-              ref
-                  .read(currentViewModeProvider.notifier)
-                  .setMode(newSelection.first);
-            },
-            style: const ButtonStyle(visualDensity: VisualDensity.compact),
-          ),
-          const SizedBox(width: 8),
-        ],
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Add Button (replaces FAB)
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              child: const Icon(CupertinoIcons.add),
+              onPressed: () {
+                // Show action sheet to choose Space or Item
+                if (parentId != null) {
+                  showCupertinoModalPopup(
+                    context: context,
+                    builder: (context) => CupertinoActionSheet(
+                      actions: [
+                        CupertinoActionSheetAction(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (_) =>
+                                  CreateSpaceDialog(parentId: parentId),
+                            );
+                          },
+                          child: const Text('New Folder'),
+                        ),
+                        CupertinoActionSheetAction(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            showCupertinoDialog(
+                              context: context,
+                              builder: (_) =>
+                                  CreateItemDialog(spaceId: parentId!),
+                            );
+                          },
+                          child: const Text('New Item'),
+                        ),
+                      ],
+                      cancelButton: CupertinoActionSheetAction(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel'),
+                      ),
+                    ),
+                  );
+                } else {
+                  // Only Space allowed at root
+                  showCupertinoDialog(
+                    context: context,
+                    builder: (_) => CreateSpaceDialog(parentId: parentId),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
       ),
-      body: viewMode == ViewMode.graph
-          ? SpaceGraphView(rootId: parentId)
-          : _buildScrollView(context, ref, viewMode),
-
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.small(
-            heroTag: 'add_space',
-            onPressed: () => showDialog(
-              context: context,
-              builder: (_) => CreateSpaceDialog(parentId: parentId),
-            ),
-            child: const Icon(Icons.create_new_folder),
-          ),
-          const SizedBox(height: 16),
-          if (parentId != null)
-            FloatingActionButton(
-              heroTag: 'add_item',
-              onPressed: () => showDialog(
-                context: context,
-                builder: (_) => CreateItemDialog(spaceId: parentId!),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // View Mode Toggle (Below Nav Bar)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: CupertinoSlidingSegmentedControl<ViewMode>(
+                  groupValue: viewMode,
+                  children: const {
+                    ViewMode.list: Text('List'),
+                    ViewMode.grid: Text('Grid'),
+                    ViewMode.graph: Text('Tree'),
+                  },
+                  onValueChanged: (mode) {
+                    if (mode != null) {
+                      ref.read(currentViewModeProvider.notifier).setMode(mode);
+                    }
+                  },
+                ),
               ),
-              child: const Icon(Icons.add),
             ),
-        ],
+            Expanded(
+              child: viewMode == ViewMode.graph
+                  ? SpaceGraphView(rootId: parentId)
+                  : _buildScrollView(context, ref, viewMode),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -148,7 +140,6 @@ class SpaceListScreen extends ConsumerWidget {
 
     return CustomScrollView(
       slivers: [
-        // Spaces Section
         spacesAsync.when(
           data: (spaces) {
             if (viewMode == ViewMode.grid) {
@@ -156,25 +147,36 @@ class SpaceListScreen extends ConsumerWidget {
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 1.5,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final space = spaces[index];
-                  return Card(
-                    child: InkWell(
-                      onTap: () => context.push('/space/${space.id}'),
+                  return GestureDetector(
+                    onTap: () => context.push('/space/${space.id}'),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: CupertinoColors.systemGroupedBackground,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.folder,
+                            CupertinoIcons.folder_solid,
                             size: 48,
-                            color: Colors.amber,
+                            color: CupertinoColors.systemYellow,
                           ),
                           Text(
                             space.name,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text('${space.itemCount} items'),
+                          Text(
+                            '${space.itemCount} items',
+                            style: const TextStyle(
+                              color: CupertinoColors.systemGrey,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -185,40 +187,50 @@ class SpaceListScreen extends ConsumerWidget {
             return SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final space = spaces[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 4,
                   ),
-                  child: ListTile(
-                    leading: const Icon(Icons.folder, color: Colors.amber),
-                    title: Text(space.name),
-                    subtitle: Text('${space.itemCount} items inside'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => context.push('/space/${space.id}'),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.white,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: CupertinoListTile(
+                      leading: const Icon(
+                        CupertinoIcons.folder_solid,
+                        color: CupertinoColors.systemYellow,
+                      ),
+                      title: Text(space.name),
+                      subtitle: Text('${space.itemCount} items'),
+                      trailing: const Icon(
+                        CupertinoIcons.chevron_forward,
+                        color: CupertinoColors.systemGrey3,
+                      ),
+                      onTap: () => context.push('/space/${space.id}'),
+                    ),
                   ),
                 );
               }, childCount: spaces.length),
             );
           },
           loading: () =>
-              const SliverToBoxAdapter(child: LinearProgressIndicator()),
+              const SliverToBoxAdapter(child: CupertinoActivityIndicator()),
           error: (e, _) => SliverToBoxAdapter(child: Text('Error: $e')),
         ),
 
-        // Items Section Header
         if (itemsAsync.hasValue && itemsAsync.value!.isNotEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: const Text(
+              child: Text(
                 'Items',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
               ),
             ),
           ),
 
-        // Items List
         itemsAsync.when(
           data: (items) {
             if (viewMode == ViewMode.grid) {
@@ -226,23 +238,32 @@ class SpaceListScreen extends ConsumerWidget {
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   childAspectRatio: 1.2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final item = items[index];
                   final isInUse = item.status == ItemStatus.inUse;
-                  return Card(
-                    color: isInUse ? Colors.red.shade50 : null,
-                    child: InkWell(
-                      onTap: () => _toggleItemStatus(ref, item, isInUse),
+                  return GestureDetector(
+                    onTap: () => _toggleItemStatus(ref, item, isInUse),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isInUse
+                            ? CupertinoColors.systemRed.withOpacity(0.1)
+                            : CupertinoColors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
                             isInUse
-                                ? Icons.warning_amber_rounded
-                                : Icons.check_circle_outline,
+                                ? CupertinoIcons.exclamationmark_circle
+                                : CupertinoIcons.check_mark_circled,
                             size: 48,
-                            color: isInUse ? Colors.red : Colors.green,
+                            color: isInUse
+                                ? CupertinoColors.systemRed
+                                : CupertinoColors.systemGreen,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -266,40 +287,50 @@ class SpaceListScreen extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = items[index];
                 final isInUse = item.status == ItemStatus.inUse;
-                return Card(
-                  color: isInUse ? Colors.red.shade50 : null,
-                  margin: const EdgeInsets.symmetric(
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 4,
                   ),
-                  child: ListTile(
-                    leading: Icon(
-                      isInUse
-                          ? Icons.warning_amber_rounded
-                          : Icons.check_circle_outline,
-                      color: isInUse ? Colors.red : Colors.green,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isInUse
+                          ? CupertinoColors.destructiveRed.withOpacity(0.1)
+                          : CupertinoColors.white,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    title: Text(
-                      item.name,
-                      style: TextStyle(
-                        decoration: isInUse ? TextDecoration.lineThrough : null,
-                        fontWeight: FontWeight.w600,
+                    child: CupertinoListTile(
+                      leading: Icon(
+                        isInUse
+                            ? CupertinoIcons.exclamationmark_circle
+                            : CupertinoIcons.check_mark_circled,
+                        color: isInUse
+                            ? CupertinoColors.destructiveRed
+                            : CupertinoColors.activeGreen,
                       ),
-                    ),
-                    subtitle: Text(item.status.label),
-                    trailing: Switch(
-                      value: !isInUse, // "Is Stored" is true
-                      onChanged: (val) async {
-                        final newStatus = val
-                            ? ItemStatus.stored
-                            : ItemStatus.inUse;
-                        await ref
-                            .read(itemRepositoryProvider)
-                            .toggleStatus(item.id, newStatus);
-                        ref.invalidate(
-                          itemsInSpaceProvider(parentId!),
-                        ); // refresh
-                      },
+                      title: Text(
+                        item.name,
+                        style: TextStyle(
+                          decoration: isInUse
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      subtitle: Text(item.status.label),
+                      trailing: CupertinoSwitch(
+                        value: !isInUse, // "Is Stored" is true
+                        onChanged: (val) async {
+                          final newStatus = val
+                              ? ItemStatus.stored
+                              : ItemStatus.inUse;
+                          await ref
+                              .read(itemRepositoryProvider)
+                              .toggleStatus(item.id, newStatus);
+                          ref.invalidate(
+                            itemsInSpaceProvider(parentId!),
+                          ); // refresh
+                        },
+                      ),
                     ),
                   ),
                 );

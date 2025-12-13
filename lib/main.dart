@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/router/app_router.dart';
@@ -25,7 +25,7 @@ class WhereIsItApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final goRouter = ref.watch(goRouterProvider);
 
-    return MaterialApp.router(
+    return CupertinoApp.router(
       title: 'Where is it!',
       theme: AppTheme.lightTheme,
       routerConfig: goRouter,
