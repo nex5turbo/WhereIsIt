@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/spaces/space_list_screen.dart';
 
 part 'app_router.g.dart';
@@ -13,7 +14,7 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/',
         name: 'home',
-        builder: (context, state) => const SpaceListScreen(parentId: null),
+        builder: (context, state) => const HomeScreen(),
         routes: [
           GoRoute(
             path: 'space/:id',
