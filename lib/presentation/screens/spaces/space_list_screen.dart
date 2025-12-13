@@ -11,6 +11,7 @@ import '../../providers/space_providers.dart';
 import '../../providers/view_mode_provider.dart';
 import 'create_space_sheet.dart';
 import 'space_graph_view.dart';
+import '../../../utils/image_helper.dart';
 
 class SpaceListScreen extends ConsumerWidget {
   final String? parentId;
@@ -215,56 +216,63 @@ class SpaceListScreen extends ConsumerWidget {
                   final hasImage = space.imagePath != null;
                   return GestureDetector(
                     onTap: () => context.push('/space/${space.id}'),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: CupertinoColors.systemGroupedBackground,
-                        borderRadius: BorderRadius.circular(12),
-                        image: hasImage
-                            ? DecorationImage(
-                                image: FileImage(File(space.imagePath!)),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  CupertinoColors.black.withOpacity(0.3),
-                                  BlendMode.darken,
+                    child: FutureBuilder<File?>(
+                      future: ImageHelper.getImageFile(space.imagePath),
+                      builder: (context, snapshot) {
+                        final imageFile = snapshot.data;
+                        final showImage = hasImage && imageFile != null;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.systemGroupedBackground,
+                            borderRadius: BorderRadius.circular(12),
+                            image: showImage
+                                ? DecorationImage(
+                                    image: FileImage(imageFile),
+                                    fit: BoxFit.cover,
+                                    colorFilter: ColorFilter.mode(
+                                      CupertinoColors.black.withOpacity(0.3),
+                                      BlendMode.darken,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (!showImage)
+                                const Icon(
+                                  CupertinoIcons.folder_solid,
+                                  size: 48,
+                                  color: CupertinoColors.systemYellow,
                                 ),
-                              )
-                            : null,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (!hasImage)
-                            const Icon(
-                              CupertinoIcons.folder_solid,
-                              size: 48,
-                              color: CupertinoColors.systemYellow,
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                            ),
-                            child: Text(
-                              space.name,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: hasImage
-                                    ? CupertinoColors.white
-                                    : CupertinoColors.black,
-                                fontSize: hasImage ? 20 : 16,
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                ),
+                                child: Text(
+                                  space.name,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: showImage
+                                        ? CupertinoColors.white
+                                        : CupertinoColors.black,
+                                    fontSize: showImage ? 20 : 16,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
                               ),
-                              textAlign: TextAlign.center,
-                            ),
+                              Text(
+                                '${space.itemCount} items',
+                                style: TextStyle(
+                                  color: showImage
+                                      ? CupertinoColors.white.withOpacity(0.8)
+                                      : CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            ],
                           ),
-                          Text(
-                            '${space.itemCount} items',
-                            style: TextStyle(
-                              color: hasImage
-                                  ? CupertinoColors.white.withOpacity(0.8)
-                                  : CupertinoColors.systemGrey,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   );
                 }, childCount: spaces.length),
@@ -284,22 +292,28 @@ class SpaceListScreen extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: CupertinoListTile(
-                      leading: space.imagePath != null
-                          ? Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(4),
-                                image: DecorationImage(
-                                  image: FileImage(File(space.imagePath!)),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            )
-                          : const Icon(
-                              CupertinoIcons.folder_solid,
-                              color: CupertinoColors.systemYellow,
-                            ),
+                      leading: FutureBuilder<File?>(
+                        future: ImageHelper.getImageFile(space.imagePath),
+                        builder: (context, snapshot) {
+                          final imageFile = snapshot.data;
+                          return space.imagePath != null && imageFile != null
+                              ? Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    image: DecorationImage(
+                                      image: FileImage(imageFile),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                )
+                              : const Icon(
+                                  CupertinoIcons.folder_solid,
+                                  color: CupertinoColors.systemYellow,
+                                );
+                        },
+                      ),
                       title: Text(space.name),
                       subtitle: Text('${space.itemCount} items'),
                       trailing: const Icon(
@@ -346,81 +360,88 @@ class SpaceListScreen extends ConsumerWidget {
 
                   return GestureDetector(
                     onTap: () => _toggleItemStatus(ref, item, isInUse),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isInUse
-                            ? CupertinoColors.systemRed.withOpacity(0.1)
-                            : CupertinoColors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        image: hasImage
-                            ? DecorationImage(
-                                image: FileImage(File(item.imagePath!)),
-                                fit: BoxFit.cover,
-                                colorFilter: ColorFilter.mode(
-                                  CupertinoColors.black.withOpacity(
-                                    isInUse ? 0.5 : 0.3,
-                                  ),
-                                  BlendMode.darken,
-                                ),
-                              )
-                            : null,
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                    child: FutureBuilder<File?>(
+                      future: ImageHelper.getImageFile(item.imagePath),
+                      builder: (context, snapshot) {
+                        final imageFile = snapshot.data;
+                        final showImage = hasImage && imageFile != null;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isInUse
+                                ? CupertinoColors.systemRed.withOpacity(0.1)
+                                : CupertinoColors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            image: showImage
+                                ? DecorationImage(
+                                    image: FileImage(imageFile),
+                                    fit: BoxFit.cover,
+                                    colorFilter: ColorFilter.mode(
+                                      CupertinoColors.black.withOpacity(
+                                        isInUse ? 0.5 : 0.3,
+                                      ),
+                                      BlendMode.darken,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Stack(
+                            alignment: Alignment.center,
                             children: [
-                              if (!hasImage)
-                                Icon(
-                                  isInUse
-                                      ? CupertinoIcons.exclamationmark_circle
-                                      : CupertinoIcons.check_mark_circled,
-                                  size: 48,
-                                  color: isInUse
-                                      ? CupertinoColors.systemRed
-                                      : CupertinoColors.systemGreen,
-                                ),
-                              if (!hasImage) const SizedBox(height: 8),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8.0,
-                                ),
-                                child: Text(
-                                  item.name,
-                                  style: TextStyle(
-                                    decoration: isInUse
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                    fontWeight: FontWeight.w600,
-                                    color: hasImage
-                                        ? CupertinoColors.white
-                                        : CupertinoColors.black,
-                                    fontSize: hasImage ? 20 : 16,
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (!showImage)
+                                    Icon(
+                                      isInUse
+                                          ? CupertinoIcons.exclamationmark_circle
+                                          : CupertinoIcons.check_mark_circled,
+                                      size: 48,
+                                      color: isInUse
+                                          ? CupertinoColors.systemRed
+                                          : CupertinoColors.systemGreen,
+                                    ),
+                                  if (!showImage) const SizedBox(height: 8),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0,
+                                    ),
+                                    child: Text(
+                                      item.name,
+                                      style: TextStyle(
+                                        decoration: isInUse
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                        fontWeight: FontWeight.w600,
+                                        color: showImage
+                                            ? CupertinoColors.white
+                                            : CupertinoColors.black,
+                                        fontSize: showImage ? 20 : 16,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
-                                ),
+                                  Text(
+                                    item.status.label,
+                                    style: TextStyle(
+                                      color: showImage
+                                          ? CupertinoColors.white.withOpacity(0.8)
+                                          : CupertinoColors.black,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                item.status.label,
-                                style: TextStyle(
-                                  color: hasImage
-                                      ? CupertinoColors.white.withOpacity(0.8)
-                                      : CupertinoColors.black,
+                              if (isInUse && showImage)
+                                const Center(
+                                  child: Icon(
+                                    CupertinoIcons.exclamationmark_circle,
+                                    size: 64,
+                                    color: CupertinoColors.destructiveRed,
+                                  ),
                                 ),
-                              ),
                             ],
                           ),
-                          if (isInUse && hasImage)
-                            const Center(
-                              child: Icon(
-                                CupertinoIcons.exclamationmark_circle,
-                                size: 64,
-                                color: CupertinoColors.destructiveRed,
-                              ),
-                            ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
                   );
                 }, childCount: items.length),
@@ -444,26 +465,32 @@ class SpaceListScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         // Image
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: CupertinoColors.systemGrey6,
-                            image: item.imagePath != null
-                                ? DecorationImage(
-                                    image: FileImage(File(item.imagePath!)),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: item.imagePath == null
-                              ? const Icon(
-                                  CupertinoIcons.cube_box,
-                                  color: CupertinoColors.systemGrey,
-                                  size: 32,
-                                )
-                              : null,
+                        FutureBuilder<File?>(
+                          future: ImageHelper.getImageFile(item.imagePath),
+                          builder: (context, snapshot) {
+                            final imageFile = snapshot.data;
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                color: CupertinoColors.systemGrey6,
+                                image: item.imagePath != null && imageFile != null
+                                    ? DecorationImage(
+                                        image: FileImage(imageFile),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: item.imagePath == null || imageFile == null
+                                  ? const Icon(
+                                      CupertinoIcons.cube_box,
+                                      color: CupertinoColors.systemGrey,
+                                      size: 32,
+                                    )
+                                  : null,
+                            );
+                          },
                         ),
                         const SizedBox(width: 16),
                         // Layout: Name & Status

@@ -3,10 +3,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import '../../../data/repositories/space_repository_impl.dart';
 import '../../providers/space_providers.dart';
+import '../../../utils/image_helper.dart';
 
 class CreateSpaceSheet extends ConsumerStatefulWidget {
   final String? parentId;
@@ -47,27 +46,16 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
     }
   }
 
-  Future<String?> _saveImageLocally(File image) async {
-    try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${p.basename(image.path)}';
-      final savedImage = await image.copy(p.join(appDir.path, fileName));
-      return savedImage.path;
-    } catch (e) {
-      debugPrint('Error saving image: $e');
-      return null;
-    }
-  }
+
 
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) return;
 
     setState(() => _isLoading = true);
     try {
-      String? savedImagePath;
+      String? savedImageFileName;
       if (_imageFile != null) {
-        savedImagePath = await _saveImageLocally(_imageFile!);
+        savedImageFileName = await ImageHelper.saveImage(_imageFile!);
       }
 
       await ref
@@ -75,7 +63,7 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
           .createSpace(
             name: _nameController.text,
             parentId: widget.parentId,
-            imagePath: savedImagePath,
+            imagePath: savedImageFileName,
           );
 
       if (mounted) {

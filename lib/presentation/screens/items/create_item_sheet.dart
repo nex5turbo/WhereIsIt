@@ -3,12 +3,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 import '../../../data/repositories/item_repository_impl.dart';
 import '../../providers/item_providers.dart';
 import '../../../domain/entities/item.dart';
+import '../../../utils/image_helper.dart';
 
 class CreateItemSheet extends ConsumerStatefulWidget {
   final String spaceId;
@@ -50,27 +49,16 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
     }
   }
 
-  Future<String?> _saveImageLocally(File image) async {
-    try {
-      final appDir = await getApplicationDocumentsDirectory();
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${p.basename(image.path)}';
-      final savedImage = await image.copy(p.join(appDir.path, fileName));
-      return savedImage.path;
-    } catch (e) {
-      debugPrint('Error saving image: $e');
-      return null;
-    }
-  }
+
 
   Future<void> _submit() async {
     if (_nameController.text.trim().isEmpty) return;
 
     setState(() => _isLoading = true);
     try {
-      String? savedImagePath;
+      String? savedImageFileName;
       if (_imageFile != null) {
-        savedImagePath = await _saveImageLocally(_imageFile!);
+        savedImageFileName = await ImageHelper.saveImage(_imageFile!);
       }
 
       final item = Item(
@@ -81,7 +69,7 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             ? _categoryController.text
             : null,
         status: ItemStatus.stored,
-        imagePath: savedImagePath,
+        imagePath: savedImageFileName,
       );
 
       await ref.read(itemRepositoryProvider).createItem(item);
