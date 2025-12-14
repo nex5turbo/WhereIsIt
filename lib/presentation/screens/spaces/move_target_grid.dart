@@ -139,7 +139,7 @@ class MoveTargetGrid extends ConsumerWidget {
     bool isRoot = false,
     required VoidCallback onDrop,
   }) {
-    return DragTarget<String>(
+    return DragTarget<Object>(
       onWillAccept: (_) => true,
       onAccept: (_) => onDrop(),
       builder: (context, candidateData, rejectedData) {
