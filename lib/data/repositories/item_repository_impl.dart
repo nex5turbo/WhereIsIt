@@ -29,6 +29,7 @@ class ItemRepositoryImpl implements ItemRepository {
               imagePath: Value(item.imagePath),
               status: Value(item.status.name),
               lastUsedAt: Value(item.lastUsedAt),
+              quantity: Value(item.quantity),
             ),
           );
 
@@ -94,7 +95,16 @@ class ItemRepositoryImpl implements ItemRepository {
       ),
     );
 
-    // 2. Handle Notifications
+    // 2. Log usage history
+    await _database.into(_database.usageLogs).insert(
+      db.UsageLogsCompanion.insert(
+        itemId: itemId,
+        actionType: newStatus == ItemStatus.inUse ? 'CHECK_OUT' : 'RESTORE',
+        timestamp: DateTime.now(),
+      ),
+    );
+
+    // 3. Handle Notifications
     if (newStatus == ItemStatus.inUse) {
       // Need to fetch item to get name
       final itemRow = await (_database.select(
@@ -124,6 +134,7 @@ class ItemRepositoryImpl implements ItemRepository {
         description: Value(item.description),
         category: Value(item.category),
         imagePath: Value(item.imagePath),
+        quantity: Value(item.quantity),
       ),
     );
   }
@@ -141,6 +152,7 @@ class ItemRepositoryImpl implements ItemRepository {
         orElse: () => ItemStatus.stored,
       ),
       lastUsedAt: row.lastUsedAt,
+      quantity: row.quantity,
       isSynced: row.isSynced,
     );
   }

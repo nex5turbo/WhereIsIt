@@ -18,4 +18,21 @@ class Space {
     required this.createdAt,
     required this.updatedAt,
   });
+
+  Space copyWith({
+    String? name,
+    String? imagePath,
+    DateTime? updatedAt,
+  }) {
+    return Space(
+      id: id,
+      name: name ?? this.name,
+      parentId: parentId,
+      imagePath: imagePath ?? this.imagePath,
+      depth: depth,
+      itemCount: itemCount,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

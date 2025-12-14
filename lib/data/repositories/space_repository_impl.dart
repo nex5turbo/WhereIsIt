@@ -112,6 +112,7 @@ class SpaceRepositoryImpl implements SpaceRepository {
     )..where((tbl) => tbl.id.equals(space.id))).write(
       db.SpacesCompanion(
         name: Value(space.name),
+        imagePath: Value(space.imagePath),
         updatedAt: Value(DateTime.now()),
       ),
     );

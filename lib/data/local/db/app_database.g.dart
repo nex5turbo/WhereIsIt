@@ -602,6 +602,17 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _quantityMeta = const VerificationMeta(
+    'quantity',
+  );
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+    'quantity',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isSyncedMeta = const VerificationMeta(
     'isSynced',
   );
@@ -627,6 +638,7 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
     imagePath,
     status,
     lastUsedAt,
+    quantity,
     isSynced,
   ];
   @override
@@ -698,6 +710,12 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         ),
       );
     }
+    if (data.containsKey('quantity')) {
+      context.handle(
+        _quantityMeta,
+        quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta),
+      );
+    }
     if (data.containsKey('is_synced')) {
       context.handle(
         _isSyncedMeta,
@@ -745,6 +763,10 @@ class $ItemsTable extends Items with TableInfo<$ItemsTable, Item> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_used_at'],
       ),
+      quantity: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quantity'],
+      ),
       isSynced: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_synced'],
@@ -767,6 +789,7 @@ class Item extends DataClass implements Insertable<Item> {
   final String? imagePath;
   final String status;
   final DateTime? lastUsedAt;
+  final int? quantity;
   final bool isSynced;
   const Item({
     required this.id,
@@ -777,6 +800,7 @@ class Item extends DataClass implements Insertable<Item> {
     this.imagePath,
     required this.status,
     this.lastUsedAt,
+    this.quantity,
     required this.isSynced,
   });
   @override
@@ -797,6 +821,9 @@ class Item extends DataClass implements Insertable<Item> {
     map['status'] = Variable<String>(status);
     if (!nullToAbsent || lastUsedAt != null) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt);
+    }
+    if (!nullToAbsent || quantity != null) {
+      map['quantity'] = Variable<int>(quantity);
     }
     map['is_synced'] = Variable<bool>(isSynced);
     return map;
@@ -820,6 +847,9 @@ class Item extends DataClass implements Insertable<Item> {
       lastUsedAt: lastUsedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedAt),
+      quantity: quantity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quantity),
       isSynced: Value(isSynced),
     );
   }
@@ -838,6 +868,7 @@ class Item extends DataClass implements Insertable<Item> {
       imagePath: serializer.fromJson<String?>(json['imagePath']),
       status: serializer.fromJson<String>(json['status']),
       lastUsedAt: serializer.fromJson<DateTime?>(json['lastUsedAt']),
+      quantity: serializer.fromJson<int?>(json['quantity']),
       isSynced: serializer.fromJson<bool>(json['isSynced']),
     );
   }
@@ -853,6 +884,7 @@ class Item extends DataClass implements Insertable<Item> {
       'imagePath': serializer.toJson<String?>(imagePath),
       'status': serializer.toJson<String>(status),
       'lastUsedAt': serializer.toJson<DateTime?>(lastUsedAt),
+      'quantity': serializer.toJson<int?>(quantity),
       'isSynced': serializer.toJson<bool>(isSynced),
     };
   }
@@ -866,6 +898,7 @@ class Item extends DataClass implements Insertable<Item> {
     Value<String?> imagePath = const Value.absent(),
     String? status,
     Value<DateTime?> lastUsedAt = const Value.absent(),
+    Value<int?> quantity = const Value.absent(),
     bool? isSynced,
   }) => Item(
     id: id ?? this.id,
@@ -876,6 +909,7 @@ class Item extends DataClass implements Insertable<Item> {
     imagePath: imagePath.present ? imagePath.value : this.imagePath,
     status: status ?? this.status,
     lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+    quantity: quantity.present ? quantity.value : this.quantity,
     isSynced: isSynced ?? this.isSynced,
   );
   Item copyWithCompanion(ItemsCompanion data) {
@@ -892,6 +926,7 @@ class Item extends DataClass implements Insertable<Item> {
       lastUsedAt: data.lastUsedAt.present
           ? data.lastUsedAt.value
           : this.lastUsedAt,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
       isSynced: data.isSynced.present ? data.isSynced.value : this.isSynced,
     );
   }
@@ -907,6 +942,7 @@ class Item extends DataClass implements Insertable<Item> {
           ..write('imagePath: $imagePath, ')
           ..write('status: $status, ')
           ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('quantity: $quantity, ')
           ..write('isSynced: $isSynced')
           ..write(')'))
         .toString();
@@ -922,6 +958,7 @@ class Item extends DataClass implements Insertable<Item> {
     imagePath,
     status,
     lastUsedAt,
+    quantity,
     isSynced,
   );
   @override
@@ -936,6 +973,7 @@ class Item extends DataClass implements Insertable<Item> {
           other.imagePath == this.imagePath &&
           other.status == this.status &&
           other.lastUsedAt == this.lastUsedAt &&
+          other.quantity == this.quantity &&
           other.isSynced == this.isSynced);
 }
 
@@ -948,6 +986,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
   final Value<String?> imagePath;
   final Value<String> status;
   final Value<DateTime?> lastUsedAt;
+  final Value<int?> quantity;
   final Value<bool> isSynced;
   final Value<int> rowid;
   const ItemsCompanion({
@@ -959,6 +998,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.imagePath = const Value.absent(),
     this.status = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
+    this.quantity = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -971,6 +1011,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     this.imagePath = const Value.absent(),
     this.status = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
+    this.quantity = const Value.absent(),
     this.isSynced = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -985,6 +1026,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Expression<String>? imagePath,
     Expression<String>? status,
     Expression<DateTime>? lastUsedAt,
+    Expression<int>? quantity,
     Expression<bool>? isSynced,
     Expression<int>? rowid,
   }) {
@@ -997,6 +1039,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       if (imagePath != null) 'image_path': imagePath,
       if (status != null) 'status': status,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (quantity != null) 'quantity': quantity,
       if (isSynced != null) 'is_synced': isSynced,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1011,6 +1054,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     Value<String?>? imagePath,
     Value<String>? status,
     Value<DateTime?>? lastUsedAt,
+    Value<int?>? quantity,
     Value<bool>? isSynced,
     Value<int>? rowid,
   }) {
@@ -1023,6 +1067,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
       imagePath: imagePath ?? this.imagePath,
       status: status ?? this.status,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      quantity: quantity ?? this.quantity,
       isSynced: isSynced ?? this.isSynced,
       rowid: rowid ?? this.rowid,
     );
@@ -1055,6 +1100,9 @@ class ItemsCompanion extends UpdateCompanion<Item> {
     if (lastUsedAt.present) {
       map['last_used_at'] = Variable<DateTime>(lastUsedAt.value);
     }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
     if (isSynced.present) {
       map['is_synced'] = Variable<bool>(isSynced.value);
     }
@@ -1075,6 +1123,7 @@ class ItemsCompanion extends UpdateCompanion<Item> {
           ..write('imagePath: $imagePath, ')
           ..write('status: $status, ')
           ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('quantity: $quantity, ')
           ..write('isSynced: $isSynced, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -1867,6 +1916,7 @@ typedef $$ItemsTableCreateCompanionBuilder =
       Value<String?> imagePath,
       Value<String> status,
       Value<DateTime?> lastUsedAt,
+      Value<int?> quantity,
       Value<bool> isSynced,
       Value<int> rowid,
     });
@@ -1880,6 +1930,7 @@ typedef $$ItemsTableUpdateCompanionBuilder =
       Value<String?> imagePath,
       Value<String> status,
       Value<DateTime?> lastUsedAt,
+      Value<int?> quantity,
       Value<bool> isSynced,
       Value<int> rowid,
     });
@@ -1965,6 +2016,11 @@ class $$ItemsTableFilterComposer extends Composer<_$AppDatabase, $ItemsTable> {
 
   ColumnFilters<DateTime> get lastUsedAt => $composableBuilder(
     column: $table.lastUsedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+    column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2066,6 +2122,11 @@ class $$ItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get quantity => $composableBuilder(
+    column: $table.quantity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isSynced => $composableBuilder(
     column: $table.isSynced,
     builder: (column) => ColumnOrderings(column),
@@ -2128,6 +2189,9 @@ class $$ItemsTableAnnotationComposer
     column: $table.lastUsedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<bool> get isSynced =>
       $composableBuilder(column: $table.isSynced, builder: (column) => column);
@@ -2217,6 +2281,7 @@ class $$ItemsTableTableManager
                 Value<String?> imagePath = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
+                Value<int?> quantity = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ItemsCompanion(
@@ -2228,6 +2293,7 @@ class $$ItemsTableTableManager
                 imagePath: imagePath,
                 status: status,
                 lastUsedAt: lastUsedAt,
+                quantity: quantity,
                 isSynced: isSynced,
                 rowid: rowid,
               ),
@@ -2241,6 +2307,7 @@ class $$ItemsTableTableManager
                 Value<String?> imagePath = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<DateTime?> lastUsedAt = const Value.absent(),
+                Value<int?> quantity = const Value.absent(),
                 Value<bool> isSynced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ItemsCompanion.insert(
@@ -2252,6 +2319,7 @@ class $$ItemsTableTableManager
                 imagePath: imagePath,
                 status: status,
                 lastUsedAt: lastUsedAt,
+                quantity: quantity,
                 isSynced: isSynced,
                 rowid: rowid,
               ),

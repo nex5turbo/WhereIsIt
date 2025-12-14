@@ -11,8 +11,13 @@ import '../../../utils/image_helper.dart';
 
 class CreateItemSheet extends ConsumerStatefulWidget {
   final String spaceId;
+  final Item? existingItem;
 
-  const CreateItemSheet({super.key, required this.spaceId});
+  const CreateItemSheet({
+    super.key,
+    required this.spaceId,
+    this.existingItem,
+  });
 
   @override
   ConsumerState<CreateItemSheet> createState() => _CreateItemSheetState();
@@ -21,14 +26,30 @@ class CreateItemSheet extends ConsumerStatefulWidget {
 class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _quantityController = TextEditingController(text: '1');
   bool _isLoading = false;
+  bool _trackQuantity = false;
   File? _imageFile;
   final _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingItem != null) {
+      _nameController.text = widget.existingItem!.name;
+      _categoryController.text = widget.existingItem!.category ?? '';
+      if (widget.existingItem!.quantity != null) {
+        _trackQuantity = true;
+        _quantityController.text = widget.existingItem!.quantity.toString();
+      }
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _categoryController.dispose();
+    _quantityController.dispose();
     super.dispose();
   }
 
@@ -59,27 +80,47 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
       String? savedImageFileName;
       if (_imageFile != null) {
         savedImageFileName = await ImageHelper.saveImage(_imageFile!);
+      } else if (widget.existingItem != null) {
+        savedImageFileName = widget.existingItem!.imagePath;
       }
 
-      final item = Item(
-        id: const Uuid().v4(),
-        spaceId: widget.spaceId,
-        name: _nameController.text,
-        category: _categoryController.text.isNotEmpty
-            ? _categoryController.text
-            : null,
-        status: ItemStatus.stored,
-        imagePath: savedImageFileName,
-      );
-
-      await ref.read(itemRepositoryProvider).createItem(item);
+      if (widget.existingItem != null) {
+        // Update existing item
+        final updatedItem = Item(
+          id: widget.existingItem!.id,
+          spaceId: widget.existingItem!.spaceId,
+          name: _nameController.text,
+          category: _categoryController.text.isNotEmpty
+              ? _categoryController.text
+              : null,
+          status: widget.existingItem!.status,
+          imagePath: savedImageFileName,
+          quantity: _trackQuantity ? int.tryParse(_quantityController.text) : null,
+          lastUsedAt: widget.existingItem!.lastUsedAt,
+        );
+        await ref.read(itemRepositoryProvider).updateItem(updatedItem);
+      } else {
+        // Create new item
+        final item = Item(
+          id: const Uuid().v4(),
+          spaceId: widget.spaceId,
+          name: _nameController.text,
+          category: _categoryController.text.isNotEmpty
+              ? _categoryController.text
+              : null,
+          status: ItemStatus.stored,
+          imagePath: savedImageFileName,
+          quantity: _trackQuantity ? int.tryParse(_quantityController.text) : null,
+        );
+        await ref.read(itemRepositoryProvider).createItem(item);
+      }
 
       if (mounted) {
         ref.invalidate(itemsInSpaceProvider(widget.spaceId));
         context.pop();
       }
     } catch (e) {
-      debugPrint('Error creating item: $e');
+      debugPrint('Error saving item: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -105,9 +146,9 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'New Item',
-                style: TextStyle(
+              Text(
+                widget.existingItem != null ? 'Edit Item' : 'New Item',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: CupertinoColors.label,
@@ -179,12 +220,97 @@ class _CreateItemSheetState extends ConsumerState<CreateItemSheet> {
             ),
             onSubmitted: (_) => _submit(),
           ),
+          const SizedBox(height: 16),
+          // Track quantity toggle
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemGrey6,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Track quantity',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                CupertinoSwitch(
+                  value: _trackQuantity,
+                  onChanged: (val) => setState(() => _trackQuantity = val),
+                ),
+              ],
+            ),
+          ),
+          if (_trackQuantity) ...[
+            const SizedBox(height: 16),
+            // Quantity field with +/- buttons
+            Row(
+              children: [
+                Expanded(
+                  child: CupertinoTextField(
+                    controller: _quantityController,
+                    placeholder: 'Quantity',
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey6,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CupertinoButton(
+                  padding: const EdgeInsets.all(12),
+                  onPressed: () {
+                    final current = int.tryParse(_quantityController.text) ?? 1;
+                    if (current > 1) {
+                      _quantityController.text = (current - 1).toString();
+                    }
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey6,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      CupertinoIcons.minus,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ),
+                ),
+                CupertinoButton(
+                  padding: const EdgeInsets.all(12),
+                  onPressed: () {
+                    final current = int.tryParse(_quantityController.text) ?? 1;
+                    _quantityController.text = (current + 1).toString();
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemGrey6,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.all(8),
+                    child: const Icon(
+                      CupertinoIcons.plus,
+                      color: CupertinoColors.systemGrey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 24),
           CupertinoButton.filled(
             onPressed: _isLoading ? null : _submit,
             child: _isLoading
                 ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                : const Text('Create Item'),
+                : Text(widget.existingItem != null ? 'Update Item' : 'Create Item'),
           ),
         ],
       ),

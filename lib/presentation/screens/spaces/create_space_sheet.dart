@@ -9,8 +9,13 @@ import '../../../utils/image_helper.dart';
 
 class CreateSpaceSheet extends ConsumerStatefulWidget {
   final String? parentId;
+  final dynamic existingSpace;
 
-  const CreateSpaceSheet({super.key, this.parentId});
+  const CreateSpaceSheet({
+    super.key,
+    this.parentId,
+    this.existingSpace,
+  });
 
   @override
   ConsumerState<CreateSpaceSheet> createState() => _CreateSpaceSheetState();
@@ -21,6 +26,14 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
   bool _isLoading = false;
   File? _imageFile;
   final _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingSpace != null) {
+      _nameController.text = widget.existingSpace.name;
+    }
+  }
 
   @override
   void dispose() {
@@ -56,22 +69,35 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
       String? savedImageFileName;
       if (_imageFile != null) {
         savedImageFileName = await ImageHelper.saveImage(_imageFile!);
+      } else if (widget.existingSpace != null) {
+        savedImageFileName = widget.existingSpace.imagePath;
       }
 
-      await ref
-          .read(spaceRepositoryProvider)
-          .createSpace(
-            name: _nameController.text,
-            parentId: widget.parentId,
-            imagePath: savedImageFileName,
-          );
+      if (widget.existingSpace != null) {
+        // Update existing space
+        final updatedSpace = widget.existingSpace.copyWith(
+          name: _nameController.text,
+          imagePath: savedImageFileName,
+          updatedAt: DateTime.now(),
+        );
+        await ref.read(spaceRepositoryProvider).updateSpace(updatedSpace);
+      } else {
+        // Create new space
+        await ref
+            .read(spaceRepositoryProvider)
+            .createSpace(
+              name: _nameController.text,
+              parentId: widget.parentId,
+              imagePath: savedImageFileName,
+            );
+      }
 
       if (mounted) {
         ref.invalidate(spacesProvider(parentId: widget.parentId));
         context.pop();
       }
     } catch (e) {
-      debugPrint('Error creating space: $e');
+      debugPrint('Error saving space: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -97,9 +123,9 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'New Space',
-                style: TextStyle(
+              Text(
+                widget.existingSpace != null ? 'Edit Space' : 'New Space',
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: CupertinoColors.label,
@@ -166,7 +192,7 @@ class _CreateSpaceSheetState extends ConsumerState<CreateSpaceSheet> {
             onPressed: _isLoading ? null : _submit,
             child: _isLoading
                 ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                : const Text('Create Space'),
+                : Text(widget.existingSpace != null ? 'Update Space' : 'Create Space'),
           ),
         ],
       ),

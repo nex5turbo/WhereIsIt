@@ -31,6 +31,7 @@ class Items extends Table {
   TextColumn get status =>
       text().withDefault(const Constant('STORED'))(); // ENUM as Text
   DateTimeColumn get lastUsedAt => dateTime().nullable()();
+  IntColumn get quantity => integer().nullable()();
   BoolColumn get isSynced => boolean().withDefault(const Constant(false))();
 
   @override
@@ -49,7 +50,29 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
+
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      onCreate: (Migrator m) async {
+        await m.createAll();
+      },
+      onUpgrade: (Migrator m, int from, int to) async {
+        if (from < 3) {
+          // Add quantity column with default value 1 for existing items
+          await m.addColumn(items, items.quantity);
+        }
+        if (from < 4) {
+          // Convert quantity=1 to null (unique items)
+          // quantity > 1 remains as is (tracked quantity items)
+          await customStatement(
+            'UPDATE items SET quantity = NULL WHERE quantity = 1',
+          );
+        }
+      },
+    );
+  }
 }
 
 LazyDatabase _openConnection() {

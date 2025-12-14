@@ -14,6 +14,7 @@ class Item {
   final String? imagePath;
   final ItemStatus status;
   final DateTime? lastUsedAt;
+  final int? quantity;
   final bool isSynced;
 
   Item({
@@ -25,6 +26,7 @@ class Item {
     this.imagePath,
     required this.status,
     this.lastUsedAt,
+    this.quantity,
     this.isSynced = false,
   });
 }
