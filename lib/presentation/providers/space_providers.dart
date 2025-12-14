@@ -5,6 +5,12 @@ import '../../data/repositories/space_repository_impl.dart';
 part 'space_providers.g.dart';
 
 @riverpod
+Future<List<Space>> allSpaces(Ref ref) {
+  final repository = ref.watch(spaceRepositoryProvider);
+  return repository.getAllSpaces();
+}
+
+@riverpod
 Stream<List<Space>> spaces(Ref ref, {String? parentId}) {
   final repository = ref.watch(spaceRepositoryProvider);
   return repository.watchSpaces(parentId: parentId);

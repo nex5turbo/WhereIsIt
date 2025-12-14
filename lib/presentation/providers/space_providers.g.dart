@@ -9,6 +9,45 @@ part of 'space_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(allSpaces)
+const allSpacesProvider = AllSpacesProvider._();
+
+final class AllSpacesProvider
+    extends
+        $FunctionalProvider<
+          AsyncValue<List<Space>>,
+          List<Space>,
+          FutureOr<List<Space>>
+        >
+    with $FutureModifier<List<Space>>, $FutureProvider<List<Space>> {
+  const AllSpacesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allSpacesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allSpacesHash();
+
+  @$internal
+  @override
+  $FutureProviderElement<List<Space>> $createElement(
+    $ProviderPointer pointer,
+  ) => $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<List<Space>> create(Ref ref) {
+    return allSpaces(ref);
+  }
+}
+
+String _$allSpacesHash() => r'0bf5d8fadeaa795a1a03d7185a5537442a6f51d5';
+
 @ProviderFor(spaces)
 const spacesProvider = SpacesFamily._();
 

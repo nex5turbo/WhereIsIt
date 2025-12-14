@@ -15,6 +15,14 @@ class ItemRepositoryImpl implements ItemRepository {
   ItemRepositoryImpl(this._database, this._notificationService);
 
   @override
+  Stream<List<Item>> getAllInUseItems() {
+    return (_database.select(_database.items)
+          ..where((tbl) => tbl.status.equals(ItemStatus.inUse.name)))
+        .watch()
+        .map((rows) => rows.map((e) => _mapToEntity(e)).toList());
+  }
+
+  @override
   Future<void> createItem(Item item) async {
     await _database.transaction(() async {
       await _database
@@ -74,11 +82,11 @@ class ItemRepositoryImpl implements ItemRepository {
   }
 
   @override
-  Future<List<Item>> getItemsInSpace(String spaceId) async {
-    final rows = await (_database.select(
-      _database.items,
-    )..where((tbl) => tbl.spaceId.equals(spaceId))).get();
-    return rows.map((e) => _mapToEntity(e)).toList();
+  Stream<List<Item>> getItemsInSpace(String spaceId) {
+    return (_database.select(_database.items)
+          ..where((tbl) => tbl.spaceId.equals(spaceId)))
+        .watch()
+        .map((rows) => rows.map((e) => _mapToEntity(e)).toList());
   }
 
   @override
@@ -155,6 +163,47 @@ class ItemRepositoryImpl implements ItemRepository {
       quantity: row.quantity,
       isSynced: row.isSynced,
     );
+  }
+  @override
+  Future<void> moveItem(String itemId, String newSpaceId) async {
+    await _database.transaction(() async {
+      // 1. Get current item to find old space
+      final item = await (_database.select(_database.items)
+            ..where((tbl) => tbl.id.equals(itemId)))
+          .getSingleOrNull();
+
+      if (item == null || item.spaceId == newSpaceId) return;
+
+      final oldSpaceId = item.spaceId;
+
+      // 2. Update Item
+      await (_database.update(_database.items)
+            ..where((tbl) => tbl.id.equals(itemId)))
+          .write(
+        db.ItemsCompanion(
+          spaceId: Value(newSpaceId),
+        ),
+      );
+
+      // 3. Decrement old space count
+      final oldSpace = await (_database.select(_database.spaces)
+            ..where((tbl) => tbl.id.equals(oldSpaceId)))
+          .getSingle();
+      
+      await (_database.update(_database.spaces)
+            ..where((tbl) => tbl.id.equals(oldSpaceId)))
+          .write(db.SpacesCompanion(
+              itemCount: Value(oldSpace.itemCount > 0 ? oldSpace.itemCount - 1 : 0)));
+
+      // 4. Increment new space count
+      final newSpace = await (_database.select(_database.spaces)
+            ..where((tbl) => tbl.id.equals(newSpaceId)))
+          .getSingle();
+
+      await (_database.update(_database.spaces)
+            ..where((tbl) => tbl.id.equals(newSpaceId)))
+          .write(db.SpacesCompanion(itemCount: Value(newSpace.itemCount + 1)));
+    });
   }
 }
 

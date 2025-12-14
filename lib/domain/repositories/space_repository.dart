@@ -12,4 +12,6 @@ abstract class SpaceRepository {
   Future<void> updateSpace(Space space);
   Future<void> deleteSpace(String id);
   Future<List<Space>> getBreadcrumbs(String spaceId);
+  Future<List<Space>> getAllSpaces();
+  Future<void> moveSpace(String spaceId, String? newParentId);
 }

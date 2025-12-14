@@ -14,6 +14,8 @@ import 'create_space_sheet.dart';
 import 'space_graph_view.dart';
 import 'space_detail_sheet.dart';
 import '../../../utils/image_helper.dart';
+import 'move_target_grid.dart';
+import '../../providers/drag_state_provider.dart';
 
 class SpaceListScreen extends ConsumerWidget {
   final String? parentId;
@@ -23,6 +25,7 @@ class SpaceListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final viewMode = ref.watch(currentViewModeProvider);
+    final isDragging = ref.watch(dragStateProvider).isDragging;
 
     final breadcrumbsAsync = parentId != null
         ? ref.watch(breadcrumbsProvider(parentId!))
@@ -30,10 +33,6 @@ class SpaceListScreen extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        // Leading handled automatically by Navigator/GoRouter usually, or explicit back button
-        // leading: parentId != null
-        //     ? CupertinoNavigationBarBackButton(onPressed: () => context.pop())
-        //     : null,
         leading: breadcrumbsAsync.when(
           data: (crumbs) {
             // Combine "My Home" and the spaces path
@@ -55,7 +54,6 @@ class SpaceListScreen extends ConsumerWidget {
                   return Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Separator (don't show before the first item)
                       if (index > 0)
                         const Padding(
                           padding: EdgeInsets.symmetric(horizontal: 4.0),
@@ -67,8 +65,6 @@ class SpaceListScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-
-                      // Breadcrumb Item
                       GestureDetector(
                         onTap: isLast
                             ? null
@@ -104,12 +100,10 @@ class SpaceListScreen extends ConsumerWidget {
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Add Button (replaces FAB)
             CupertinoButton(
               padding: EdgeInsets.zero,
               child: const Icon(CupertinoIcons.add),
               onPressed: () {
-                // Show action sheet to choose Space or Item
                 if (parentId != null) {
                   showCupertinoModalPopup(
                     context: context,
@@ -145,7 +139,6 @@ class SpaceListScreen extends ConsumerWidget {
                     ),
                   );
                 } else {
-                  // Only Space allowed at root
                   showCupertinoModalPopup(
                     context: context,
                     builder: (_) => CreateSpaceSheet(parentId: parentId),
@@ -156,36 +149,43 @@ class SpaceListScreen extends ConsumerWidget {
           ],
         ),
       ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // View Mode Toggle (Below Nav Bar)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: SizedBox(
-                width: double.infinity,
-                child: CupertinoSlidingSegmentedControl<ViewMode>(
-                  groupValue: viewMode,
-                  children: const {
-                    ViewMode.list: Text('List'),
-                    ViewMode.grid: Text('Grid'),
-                    ViewMode.graph: Text('Tree'),
-                  },
-                  onValueChanged: (mode) {
-                    if (mode != null) {
-                      ref.read(currentViewModeProvider.notifier).setMode(mode);
-                    }
-                  },
+      child: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: CupertinoSlidingSegmentedControl<ViewMode>(
+                      groupValue: viewMode,
+                      children: const {
+                        ViewMode.list: Text('List'),
+                        ViewMode.grid: Text('Grid'),
+                        ViewMode.graph: Text('Tree'),
+                      },
+                      onValueChanged: (mode) {
+                        if (mode != null) {
+                          ref.read(currentViewModeProvider.notifier).setMode(mode);
+                        }
+                      },
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: viewMode == ViewMode.graph
+                      ? SpaceGraphView(rootId: parentId)
+                      : _buildScrollView(context, ref, viewMode),
+                ),
+              ],
             ),
-            Expanded(
-              child: viewMode == ViewMode.graph
-                  ? SpaceGraphView(rootId: parentId)
-                  : _buildScrollView(context, ref, viewMode),
+          ),
+          if (isDragging)
+            const Positioned.fill(
+              child: MoveTargetGrid(),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -198,7 +198,7 @@ class SpaceListScreen extends ConsumerWidget {
     final spacesAsync = ref.watch(spacesProvider(parentId: parentId));
     final itemsAsync = parentId != null
         ? ref.watch(itemsInSpaceProvider(parentId!))
-        : const AsyncValue.data(<Item>[]);
+        : ref.watch(allInUseItemsProvider);
 
     return CustomScrollView(
       slivers: [
@@ -207,16 +207,16 @@ class SpaceListScreen extends ConsumerWidget {
             if (viewMode == ViewMode.grid) {
               return SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount:
-                      2, // 2 columns usually looks better with images
-                  childAspectRatio: 1.0, // Square for better image visibility
+                  crossAxisCount: 2, 
+                  childAspectRatio: 1.0, 
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
                 ),
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final space = spaces[index];
                   final hasImage = space.imagePath != null;
-                  return Container(
+                  
+                  final child = Container(
                     decoration: BoxDecoration(
                       color: CupertinoColors.systemGroupedBackground,
                       borderRadius: BorderRadius.circular(12),
@@ -231,13 +231,11 @@ class SpaceListScreen extends ConsumerWidget {
                           return Stack(
                             fit: StackFit.expand,
                             children: [
-                              // Background (Image or Placeholder)
                               if (showImage)
                                 Image.file(
                                   imageFile,
                                   fit: BoxFit.cover,
-                                  color: const Color(
-                                      0xFF000000), // Base color to blend
+                                  color: const Color(0xFF000000), 
                                   colorBlendMode: BlendMode.dstATop,
                                 )
                               else
@@ -248,10 +246,8 @@ class SpaceListScreen extends ConsumerWidget {
                                   color: CupertinoColors.black.withOpacity(0.3),
                                 ),
 
-                              // Content Split
                               Row(
                                 children: [
-                                  // Left 80% - Details
                                   Expanded(
                                     flex: 4,
                                     child: GestureDetector(
@@ -270,7 +266,7 @@ class SpaceListScreen extends ConsumerWidget {
                                           if (!showImage)
                                             const Icon(
                                               CupertinoIcons.folder_solid,
-                                              size: 32, // Slightly smaller to fit
+                                              size: 32, 
                                               color: CupertinoColors.systemYellow,
                                             ),
                                           Padding(
@@ -304,7 +300,6 @@ class SpaceListScreen extends ConsumerWidget {
                                       ),
                                     ),
                                   ),
-                                  // Right 20% - Navigation
                                   Expanded(
                                     flex: 1,
                                     child: GestureDetector(
@@ -330,13 +325,44 @@ class SpaceListScreen extends ConsumerWidget {
                       ),
                     ),
                   );
+
+                  return LongPressDraggable<Space>(
+                    data: space,
+                    feedback: SizedBox(
+                      width: 150, 
+                      height: 150,
+                      child: Transform.scale(
+                        scale: 1.1,
+                        child: Opacity(
+                          opacity: 0.8,
+                          child: child,
+                        ),
+                      ),
+                    ),
+                    onDragStarted: () {
+                      ref.read(dragStateProvider.notifier).startDraggingSpace(space);
+                    },
+                    onDraggableCanceled: (_, __) {
+                      ref.read(dragStateProvider.notifier).stopDragging();
+                    },
+                    onDragEnd: (_) {
+                      // Handled by DropTarget or logic, but ensure reset just in case
+                      // Actually strict mode: DropTarget handles reset on drop.
+                      // If dropped outside, this callback fires.
+                      // Ideally we reset here too if not accepted.
+                      ref.read(dragStateProvider.notifier).stopDragging();
+                    },
+                    child: child,
+                  );
+
                 }, childCount: spaces.length),
               );
             }
             return SliverList(
               delegate: SliverChildBuilderDelegate((context, index) {
                 final space = spaces[index];
-                return Padding(
+                
+                final child = Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 4,
@@ -348,7 +374,6 @@ class SpaceListScreen extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        // Main Click Area (Image + Text)
                         Expanded(
                           child: GestureDetector(
                             behavior: HitTestBehavior.opaque,
@@ -416,12 +441,11 @@ class SpaceListScreen extends ConsumerWidget {
                             ),
                           ),
                         ),
-                        // Navigation Area
                         GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => context.push('/space/${space.id}'),
                           child: Container(
-                            height: 80, // Match typical height or make flexible
+                            height: 80, 
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             alignment: Alignment.center,
                             child: const Icon(
@@ -434,6 +458,32 @@ class SpaceListScreen extends ConsumerWidget {
                     ),
                   ),
                 );
+
+                return LongPressDraggable<Space>(
+                    data: space,
+                    feedback: SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.9,
+                      height: 80,
+                      child: Transform.scale(
+                        scale: 1.05,
+                        child: Opacity(
+                          opacity: 0.9,
+                          child: child,
+                        ),
+                      ),
+                    ),
+                    onDragStarted: () {
+                       ref.read(dragStateProvider.notifier).startDraggingSpace(space);
+                    },
+                    onDraggableCanceled: (_, __) {
+                      ref.read(dragStateProvider.notifier).stopDragging();
+                    },
+                    onDragEnd: (_) {
+                       ref.read(dragStateProvider.notifier).stopDragging();
+                    },
+                    child: child,
+                );
+
               }, childCount: spaces.length),
             );
           },
@@ -447,7 +497,7 @@ class SpaceListScreen extends ConsumerWidget {
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                'Items',
+                parentId == null ? 'Items In Use' : 'Items',
                 style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
               ),
             ),
@@ -468,7 +518,7 @@ class SpaceListScreen extends ConsumerWidget {
                   final isInUse = item.status == ItemStatus.inUse;
                   final hasImage = item.imagePath != null;
 
-                  return GestureDetector(
+                  final child = GestureDetector(
                     onTap: () {
                       showCupertinoModalPopup(
                         context: context,
@@ -593,6 +643,10 @@ class SpaceListScreen extends ConsumerWidget {
                       },
                     ),
                   );
+
+                  return child;
+
+
                 }, childCount: items.length),
               );
             }
@@ -600,7 +654,8 @@ class SpaceListScreen extends ConsumerWidget {
               delegate: SliverChildBuilderDelegate((context, index) {
                 final item = items[index];
                 final isInUse = item.status == ItemStatus.inUse;
-                return Padding(
+                
+                final child = Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 8,
@@ -708,7 +763,7 @@ class SpaceListScreen extends ConsumerWidget {
                           ),
                         ),
                         // Spacer automatic via Expanded
-                        // Toggle
+                          // Toggle
                         CupertinoSwitch(
                           value: !isInUse,
                           onChanged: (val) async {
@@ -718,7 +773,7 @@ class SpaceListScreen extends ConsumerWidget {
                             await ref
                                 .read(itemRepositoryProvider)
                                 .toggleStatus(item.id, newStatus);
-                            ref.invalidate(itemsInSpaceProvider(parentId!));
+
                           },
                         ),
                         const SizedBox(width: 8),
@@ -727,6 +782,9 @@ class SpaceListScreen extends ConsumerWidget {
                   ),
                 ),
                 );
+
+                return child;
+
               }, childCount: items.length),
             );
           },
@@ -742,13 +800,7 @@ class SpaceListScreen extends ConsumerWidget {
         '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
-  Future<void> _toggleItemStatus(WidgetRef ref, Item item, bool toStore) async {
-    final newStatus = toStore ? ItemStatus.stored : ItemStatus.inUse;
-    await ref.read(itemRepositoryProvider).toggleStatus(item.id, newStatus);
-    if (parentId != null) {
-      ref.invalidate(itemsInSpaceProvider(parentId!));
-    }
-  }
+
 }
 
 class _BreadcrumbItem {
